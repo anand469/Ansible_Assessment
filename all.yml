@@ -129,4 +129,24 @@
         - python3-pip
         - python3-venv
 
+    # Create a virtual environment
+    - name: Create a virtual environment
+      command: python3 -m venv "{{ deployment_location }}/venv"
+      args:
+        creates: "{{ deployment_location }}/venv/bin/activate"
+
+    # Upgrade pip in the virtual environment
+    - name: Upgrade pip in the virtual environment
+      command: "{{ deployment_location }}/venv/bin/pip install --upgrade pip"
+
+    # Copy the wheel file to the deployment directory
+    - name: Copy the wheel file to the deployment directory
+      copy:
+        src: "{{ wheel_file }}"
+        dest: "{{ deployment_location }}/{{ wheel_file }}"
+        owner: "{{ ansible_user_id }}"
+        group: "{{ ansible_user_gid }}"
+        mode: '0644'
+
+    
     
