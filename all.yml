@@ -1,0 +1,30 @@
+---
+# Configuring standard CA certificates
+  
+  hosts: all
+  become: yes
+
+  tasks:
+    # Installing ca-certificates package if the host is of Debian family
+    - name: Installing ca-certificates package if the host is of Debian family
+      package:
+        name: ca-certificates
+        state: present
+      when: ansible_os_family == "Debian"
+
+    # Installing ca-certificates package if the host is of RedHat family
+    - name: Installing ca-certificates package if the host is of RedHat family
+      package:
+        name: ca-certificates
+        state: present
+      when: ansible_os_family == "RedHat"
+
+    # Update CA certificate bundle on Debian
+    - name: Update CA certificate bundle on Debian
+      command: update-ca-certificates
+      when: ansible_os_family == "Debian"
+
+    # Update CA certificate bundle on RedHat
+    - name: Update CA certificate bundle on RedHat
+      command: update-ca-trust
+      when: ansible_os_family == "RedHat"
