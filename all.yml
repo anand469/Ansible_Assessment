@@ -148,5 +148,48 @@
         group: "{{ ansible_user_gid }}"
         mode: '0644'
 
-    
+    # Install the application wheel file
+    - name: Install the application wheel file
+      command: "{{ deployment_location }}/venv/bin/pip install {{ deployment_location }}/{{ wheel_file }}"
+
+    # Copy app.py to the deployment directory
+    - name: Copy app.py to the deployment directory
+      copy:
+        src: app.py
+        dest: "{{ deployment_location }}/app.py"
+        owner: "{{ ansible_user_id }}"
+        group: "{{ ansible_user_gid }}"
+        mode: '0644'
+
+    # Create systemd service file for the Flask app
+    - name: Create systemd service file for the Flask app
+      copy:
+        content: |
+          [Unit]
+          Description=Flask Application
+          After=network.target
+
+          [Service]
+          User={{ ansible_user_id }}
+          WorkingDirectory={{ deployment_location }}
+          ExecStart={{ deployment_location }}/venv/bin/flask run -p {{ application_port }}
+          Restart=always
+
+          [Install]
+          WantedBy=multi-user.target
+        dest: /etc/systemd/system/flask_app.service
+        owner: root
+        group: root
+        mode: '0644'
+
+    # Reload systemd to pick up new flask_app service
+    - name: Reload systemd to pick up new flask_app service
+      command: systemctl daemon-reload
+
+    # Enable and start the flask_app service
+    - name: Enable and start the flask_app service
+      systemd:
+        name: flask_app
+        enabled: yes
+        state: started
     
