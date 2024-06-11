@@ -27,7 +27,7 @@
     - name: Update CA certificate bundle on RedHat
       command: update-ca-trust
       when: ansible_os_family == "RedHat"
-      
+
 ---
 - name: Validationg and installing Custom CA certificates
   hosts: all
@@ -104,24 +104,29 @@
   hosts: all
   become: yes
   
-  vars: # you can add these variables as of your choice by passing the arguments while executing the playbook
-    app_dir: /opt/example
-    app_wheel: example-1.1.1-py3-none-any.whl
-    app_port: 5000  
+  vars:
+    deployment_location: /opt/example
+    application_port: 5000
+    wheel_file: example-1.1.1-py3-none-any.whl
+
   tasks:
+    # Ensure deployment directory exists
     - name: Ensure deployment directory exists
       file:
-        path: "{{ app_dir }}"
+        path: "{{ deployment_location }}"
         state: directory
+        owner: "{{ ansible_user_id }}"
+        group: "{{ ansible_user_gid }}"
         mode: '0755'
 
-    # Create a virtual environment in the deployment directory
-    - name: Create virtual environment
-      command: python3 -m venv {{ app_dir }}/venv
+    # Install Python 3 and pip
+    - name: Install Python 3 and pip
+      package:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - python3
+        - python3-pip
+        - python3-venv
 
-    # Copy the application wheel file to the deployment directory
-    - name: Copy application wheel file
-      copy:
-        src: "../files/{{ app_wheel }}"
-        dest: "{{ app_dir }}/{{ app_wheel }}"
-        mode: '0644'  
+    
