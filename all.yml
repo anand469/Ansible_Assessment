@@ -27,6 +27,7 @@
     - name: Update CA certificate bundle on RedHat
       command: update-ca-trust
       when: ansible_os_family == "RedHat"
+      
 ---
 - name: Validationg and installing Custom CA certificates
   hosts: all
@@ -71,3 +72,56 @@
             - cert_check.stat.exists
             - ansible_os_family == "Debian"
           notify: update_ca_certificates (Debian)
+        - name: Copy {{ item.name }} certificate to the host
+          copy:
+            src: "{{ item.cert_src }}"
+            dest: "{{ item.cert_dest_redhat }}"
+          when: 
+            - cert_check.stat.exists
+            - ansible_os_family == "RedHat"
+          notify: update_ca_certificates (RedHat)
+
+        - name: Copy {{ item.name }} key to the host
+          copy:
+            src: "{{ item.key_src }}"
+            dest: "{{ item.key_dest }}"
+            mode: "0600"
+          when: cert_check.stat.exists
+      loop: "{{ ca_certificates }}"
+  handlers:
+    - name: Update CA certificates (Debian)
+      command: "update-ca-certificates"
+      listen: update_ca_certificates
+      when: ansible_os_family == "Debian"
+
+    - name: Update CA certificates (RedHat)
+      command: "update-ca-trust"
+      listen: update_ca_certificates
+      when: ansible_os_family == "RedHat"  
+
+---
+- name: Deploying a python application into a virtual environment
+  hosts: all
+  become: yes
+  
+  vars: # you can add these variables as of your choice by passing the arguments while executing the playbook
+    app_dir: /opt/example
+    app_wheel: example-1.1.1-py3-none-any.whl
+    app_port: 5000  
+  tasks:
+    - name: Ensure deployment directory exists
+      file:
+        path: "{{ app_dir }}"
+        state: directory
+        mode: '0755'
+
+    # Create a virtual environment in the deployment directory
+    - name: Create virtual environment
+      command: python3 -m venv {{ app_dir }}/venv
+
+    # Copy the application wheel file to the deployment directory
+    - name: Copy application wheel file
+      copy:
+        src: "../files/{{ app_wheel }}"
+        dest: "{{ app_dir }}/{{ app_wheel }}"
+        mode: '0644'  
