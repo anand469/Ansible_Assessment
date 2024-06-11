@@ -51,4 +51,23 @@
         cert_dest_debian: "/usr/local/share/ca-certificates/CA3.crt"
         cert_dest_redhat: "/etc/pki/ca-trust/source/anchors/CA3.crt"
         key_dest: "/etc/ssl/private/CA3.key"
-      
+  tasks:
+    - name: Validate and copy CA certificates and keys
+      block:
+        - name: Validate {{ item.name }} certificate
+          stat:
+            path: "{{ item.cert_src }}"
+          register: cert_check
+
+        - name: Check {{ item.name }} certificate validity
+          shell: "openssl x509 -checkend 0 -noout -in {{ item.cert_src }}"
+          when: cert_check.stat.exists
+
+        - name: Copy {{ item.name }} certificate to the host
+          copy:
+            src: "{{ item.cert_src }}"
+            dest: "{{ item.cert_dest_debian }}"
+          when: 
+            - cert_check.stat.exists
+            - ansible_os_family == "Debian"
+          notify: update_ca_certificates (Debian)
