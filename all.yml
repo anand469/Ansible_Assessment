@@ -1,6 +1,5 @@
 ---
-# Configuring standard CA certificates
-  
+- name: Configuring standard CA certificates
   hosts: all
   become: yes
 
@@ -28,3 +27,28 @@
     - name: Update CA certificate bundle on RedHat
       command: update-ca-trust
       when: ansible_os_family == "RedHat"
+---
+- name: Validationg and installing Custom CA certificates
+  hosts: all
+  become: yes
+  vars:
+    ca_certificates:
+      - name: "CA1"
+        cert_src: "./CA1.crt"
+        key_src: "./CA1.key"
+        cert_dest_debian: "/usr/local/share/ca-certificates/CA1.crt"
+        cert_dest_redhat: "/etc/pki/ca-trust/source/anchors/CA1.crt"
+        key_dest: "/etc/ssl/private/CA1.key"
+      - name: "CA2"
+        cert_src: "./CA2.crt"
+        key_src: "./CA2.key"
+        cert_dest_debian: "/usr/local/share/ca-certificates/CA2.crt"
+        cert_dest_redhat: "/etc/pki/ca-trust/source/anchors/CA2.crt"
+        key_dest: "/etc/ssl/private/CA2.key"
+      - name: "CA3"
+        cert_src: "./CA3.crt"
+        key_src: "./CA3.key"
+        cert_dest_debian: "/usr/local/share/ca-certificates/CA3.crt"
+        cert_dest_redhat: "/etc/pki/ca-trust/source/anchors/CA3.crt"
+        key_dest: "/etc/ssl/private/CA3.key"
+      
