@@ -29,7 +29,7 @@
       when: ansible_os_family == "RedHat"
 
 ---
-- name: Validationg and installing Custom CA certificates
+- name: Validating and installing Custom CA certificates
   hosts: all
   become: yes
   vars:
@@ -53,41 +53,55 @@
         cert_dest_redhat: "/etc/pki/ca-trust/source/anchors/CA3.crt"
         key_dest: "/etc/ssl/private/CA3.key"
   tasks:
-    - name: Validate and copy CA certificates and keys
-      block:
-        - name: Validate {{ item.name }} certificate
-          stat:
-            path: "{{ item.cert_src }}"
-          register: cert_check
-
-        - name: Check {{ item.name }} certificate validity
-          shell: "openssl x509 -checkend 0 -noout -in {{ item.cert_src }}"
-          when: cert_check.stat.exists
-
-        - name: Copy {{ item.name }} certificate to the host
-          copy:
-            src: "{{ item.cert_src }}"
-            dest: "{{ item.cert_dest_debian }}"
-          when: 
-            - cert_check.stat.exists
-            - ansible_os_family == "Debian"
-          notify: update_ca_certificates (Debian)
-        - name: Copy {{ item.name }} certificate to the host
-          copy:
-            src: "{{ item.cert_src }}"
-            dest: "{{ item.cert_dest_redhat }}"
-          when: 
-            - cert_check.stat.exists
-            - ansible_os_family == "RedHat"
-          notify: update_ca_certificates (RedHat)
-
-        - name: Copy {{ item.name }} key to the host
-          copy:
-            src: "{{ item.key_src }}"
-            dest: "{{ item.key_dest }}"
-            mode: "0600"
-          when: cert_check.stat.exists
+    - name: Validate {{ item.name }} certificate
+      stat:
+        path: "{{ item.cert_src }}"
+      register: cert_check
       loop: "{{ ca_certificates }}"
+      loop_control:
+        label: "{{ item.name }}"
+      
+    - name: Check {{ item.name }} certificate validity
+      shell: "openssl x509 -checkend 0 -noout -in {{ item.cert_src }}"
+      when: cert_check.stat.exists
+      loop: "{{ ca_certificates }}"
+      loop_control:
+        label: "{{ item.name }}"
+
+    - name: Copy {{ item.name }} certificate to the host
+      copy:
+        src: "{{ item.cert_src }}"
+        dest: "{{ item.cert_dest_debian }}"
+      when: 
+        - cert_check.stat.exists
+        - ansible_os_family == "Debian"
+      notify: update_ca_certificates (Debian)
+      loop: "{{ ca_certificates }}"
+      loop_control:
+        label: "{{ item.name }}"
+
+    - name: Copy {{ item.name }} certificate to the host
+      copy:
+        src: "{{ item.cert_src }}"
+        dest: "{{ item.cert_dest_redhat }}"
+      when: 
+        - cert_check.stat.exists
+        - ansible_os_family == "RedHat"
+      notify: update_ca_certificates (RedHat)
+      loop: "{{ ca_certificates }}"
+      loop_control:
+        label: "{{ item.name }}"
+
+    - name: Copy {{ item.name }} key to the host
+      copy:
+        src: "{{ item.key_src }}"
+        dest: "{{ item.key_dest }}"
+        mode: "0600"
+      when: cert_check.stat.exists
+      loop: "{{ ca_certificates }}"
+      loop_control:
+        label: "{{ item.name }}"
+
   handlers:
     - name: update_ca_certificates (Debian)
       command: "update-ca-certificates"
@@ -190,4 +204,3 @@
         name: flask_app
         enabled: yes
         state: started
-    
