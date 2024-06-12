@@ -89,14 +89,12 @@
           when: cert_check.stat.exists
       loop: "{{ ca_certificates }}"
   handlers:
-    - name: Update CA certificates (Debian)
+    - name: update_ca_certificates (Debian)
       command: "update-ca-certificates"
-      listen: update_ca_certificates
       when: ansible_os_family == "Debian"
 
-    - name: Update CA certificates (RedHat)
+    - name: update_ca_certificates (RedHat)
       command: "update-ca-trust"
-      listen: update_ca_certificates
       when: ansible_os_family == "RedHat"  
 
 ---
